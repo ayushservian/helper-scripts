@@ -16,7 +16,7 @@ function Get-Resource {
 }
 
 $ProjectBranchesResponse = Get-Resource `
-    "https://api.github.com/orgs/Bunnings-Digital/repos" `
+    "https://api.github.com/orgs/Org-Digital/repos" `
     "ghp_7xxxxxxxxxxxxxxxxxxxxx"
 
 $ProjectBranches = $ProjectBranchesResponse.Content | ConvertFrom-Json
