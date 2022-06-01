@@ -50,7 +50,7 @@ function build {
     
 }
 
-function Api-Call {
+function Get-Resource {
     Param([string]$URI, [string]$Token, [bool]$BasicOrBearer)
 
     

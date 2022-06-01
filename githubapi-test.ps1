@@ -1,4 +1,4 @@
-function Api-Call {
+function Get-Resource {
     Param([string]$URI, [string]$Token)
 
     $authValue = "token $Token"
@@ -15,7 +15,7 @@ function Api-Call {
     return $Response
 }
 
-$ProjectBranchesResponse = Api-Call `
+$ProjectBranchesResponse = Get-Resource `
     "https://api.github.com/orgs/Bunnings-Digital/repos" `
     "ghp_7xxxxxxxxxxxxxxxxxxxxx"
 
