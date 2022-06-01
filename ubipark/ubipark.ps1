@@ -18,7 +18,7 @@ function GetFormData  {
 }
 
 function GetUbiParkVals {
-    Write-Host "Getting values from ubiparkCreds.json of format {email: '', pass: '', baseUri: '', carParkID: ''}"
+    Write-Host "Getting values from ubiparkCreds.json of format {email: '', pass: '', baseUri: '', carParkID: '', numberPlate: ''}"
     $creds = Get-Content -Raw -Path .\ubiparkCreds.json | ConvertFrom-Json
 
     if($null -eq $creds){
