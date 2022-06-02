@@ -244,7 +244,6 @@ function CheckDate {
     return $isValidDate
 }
 
-$Date = "2022-06-03"
 
 if($null -eq $args[0]){
     $intent = CheckIntent
@@ -266,6 +265,7 @@ $CarParkID = $Vals.carParkID
 $NumberPlate = $Vals.numberPlate
 $session = GetUbiParkSession
 
+# $Date = "2022-06-23"
 do{
     $Date = Read-Host "Please enter the date (in format yyyy-MM-dd):"
     $isValidDate = CheckDate
