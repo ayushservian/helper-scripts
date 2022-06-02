@@ -35,10 +35,17 @@ function GetUbiParkSession {
         Write-Host "No creds found!!"
         return $null;
     }
+    
+    if(($null -eq $creds.pass) -or ($creds.pass.Length -eq 0) ){
+        $SecurePassword = Read-Host -Prompt "Please enter your password" -AsSecureString
+        $pass = (New-Object PSCredential "user",$SecurePassword).GetNetworkCredential().Password
+    } else {
+        $pass = $creds.pass
+    }
     Write-Host "Getting Login Form"
 
     $urlencodedEmail = [System.Web.HttpUtility]::UrlEncode($creds.email)
-    $urlencodedPass = [System.Web.HttpUtility]::UrlEncode($creds.pass)
+    $urlencodedPass = [System.Web.HttpUtility]::UrlEncode($pass)
 
     $Uri = "${BaseUri}/Account/Login"
 
@@ -156,14 +163,99 @@ function UbiParkCancel ([Microsoft.PowerShell.Commands.WebRequestSession]$sessio
     }
 }
 
+function UbiParkList {
+    [CmdletBinding()]
+    param([Microsoft.PowerShell.Commands.WebRequestSession]$session)
 
-$Date = "2022-06-23"
+    if($null -eq $session){
+        Write-Host "No session!"
+        return
+    }
+    Write-Host "Getting Car Park List"
+    $Uri = "${BaseUri}/BookNow/GetCarParkList?rateGroupID=70"
+    $WebResp = Invoke-WebRequest `
+                -Uri $Uri `
+                -Method Get `
+                -WebSession $session
+    $list = $WebResp.Content | ConvertFrom-Json
+    foreach ($park in $list) {
+        Write-Host "$($park.ID) => $($park.Name)"
+    }
+}
+
+function CheckIntent {
+    $doesFileExist = Test-Path -Path .\ubiparkCreds.json -PathType Leaf
+    if($doesFileExist){
+        do{
+            $confirm = Read-Host "Do you want to overwrite existing config file from scratch (Y/n)?"
+        } while (
+            # ($null -ne $confirm) -and 
+            (
+                ($confirm -ne "Y") -and 
+                ($confirm -ne "n"))
+        )
+        if($confirm -eq "n"){
+            Write-Host "Please pass in an argument. Possible values are:`r`n1. IDs`r`n2. Book`r`n3. Cancel`r`n" 
+            return $false
+        }
+    }
+    return $true
+}
+
+function Init {
+    Write-Host "Lets create your config file (ubiparkCreds.json)"
+    $email = Read-Host -Prompt "Please enter your email"
+
+    $SecurePassword = Read-Host -Prompt "Please enter your password" -AsSecureString
+    $UnsecurePassword = (New-Object PSCredential "user",$SecurePassword).GetNetworkCredential().Password
+
+    $baseuri = Read-Host -Prompt "Please enter the base URI of the site (format: https://your-site.ubipark.com)"
+
+    $numPlate = Read-Host -Prompt "Please enter number plate of the vehicle to book the spot for"
+
+    UbiParkList $session
+    $parkId = Read-Host -Prompt "Which car park would you like to book for?"
+
+    $Vals = @{
+        "email" = $email
+        "pass" = $UnsecurePassword
+        "baseUri" = $baseuri
+        "numberPlate" = $numPlate
+        "carParkID" = $parkId
+    }
+    Set-Content -Path .\ubiparkTest.json -Value $($Vals | ConvertTo-Json)
+}
+
+$Date = "2022-06-03"
+
+if($null -eq $args[0]){
+    $intent = CheckIntent
+    if($intent){
+        Init
+    } else {
+        return
+    }
+}
 
 $Vals = GetUbiParkVals
+while($null -eq $Vals){
+    Init
+    $Vals = GetUbiParkVals
+}
+
 $BaseUri = $Vals.baseUri
 $CarParkID = $Vals.carParkID
 $NumberPlate = $Vals.numberPlate
 $session = GetUbiParkSession
 
-UbiParkBook $session $Date
+switch ($args[0]) {
+    "Init" { Init }
+    "IDs" { UbiParkList $session }
+    "Book" { UbiParkBook $session $Date }
+    "Cancel" { UbiParkCancel $session $Date }
+    Default { Write-Host "Please pass in an argument. Possible values are:`r`n1. IDs`r`n2. Book`r`n3. Cancel`r`n" }
+}
+
+
+# UbiParkBook $session $Date
 # UbiParkCancel $session $Date
