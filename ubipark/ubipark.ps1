@@ -223,7 +223,25 @@ function Init {
         "numberPlate" = $numPlate
         "carParkID" = $parkId
     }
-    Set-Content -Path .\ubiparkTest.json -Value $($Vals | ConvertTo-Json)
+    Set-Content -Path .\ubiparkCreds.json -Value $($Vals | ConvertTo-Json)
+}
+
+function CheckDate {
+    $date = $Date
+    $isValidDate = $false
+    [ref]$parsedDate = Get-Date
+
+    if ([DateTime]::TryParseExact(
+            $date, 
+            "yyyy-MM-dd",
+            [System.Globalization.CultureInfo]::InvariantCulture,
+            [System.Globalization.DateTimeStyles]::None,
+            $parseddate)) {
+        $isValidDate = $true
+    } else {
+        $isValidDate = $false
+    }
+    return $isValidDate
 }
 
 $Date = "2022-06-03"
@@ -248,14 +266,13 @@ $CarParkID = $Vals.carParkID
 $NumberPlate = $Vals.numberPlate
 $session = GetUbiParkSession
 
+do{
+    $Date = Read-Host "Please enter the date (in format yyyy-MM-dd):"
+    $isValidDate = CheckDate
+} while ($isValidDate -eq $false)
+
 switch ($args[0]) {
-    "Init" { Init }
-    "IDs" { UbiParkList $session }
     "Book" { UbiParkBook $session $Date }
     "Cancel" { UbiParkCancel $session $Date }
-    Default { Write-Host "Please pass in an argument. Possible values are:`r`n1. IDs`r`n2. Book`r`n3. Cancel`r`n" }
+    Default { Write-Host "Please pass in an argument. Possible values are:`r`n1. Book`r`n2. Cancel`r`n" }
 }
-
-
-# UbiParkBook $session $Date
-# UbiParkCancel $session $Date
