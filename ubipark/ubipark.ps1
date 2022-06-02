@@ -1,20 +1,25 @@
-function GetReqVerToken ([String]$WebResp) {
-    return GetFormData $WebResp "__RequestVerificationToken"
-}
+function Init {
+    Write-Host "Lets create your config file (ubiparkCreds.json)"
+    $email = Read-Host -Prompt "Please enter your email"
 
-function GetFormData  {
-    [CmdletBinding()]
-    param([String]$WebResp, [String]$Data)
-    $DataValue = "404"
-    if($WebResp.Contains($Data)) {
-        $Index1 = $WebResp.IndexOf("$Data")
-        $ReqVerStart = $WebResp.Substring($Index1)
-        $IndexVal = $ReqVerStart.IndexOf("value=")
-        $IndexEnd = $ReqVerStart.IndexOf("/>")
-        $DataValue = $ReqVerStart.Substring($IndexVal + 6, $IndexEnd - $IndexVal - 7).Replace("`"","")
+    $SecurePassword = Read-Host -Prompt "Please enter your password" -AsSecureString
+    $UnsecurePassword = (New-Object PSCredential "user",$SecurePassword).GetNetworkCredential().Password
+
+    $baseuri = Read-Host -Prompt "Please enter the base URI of the site (format: https://your-site.ubipark.com)"
+
+    $numPlate = Read-Host -Prompt "Please enter number plate of the vehicle to book the spot for"
+
+    UbiParkList $session
+    $parkId = Read-Host -Prompt "Which car park would you like to book for?"
+
+    $Vals = @{
+        "email" = $email
+        "pass" = $UnsecurePassword
+        "baseUri" = $baseuri
+        "numberPlate" = $numPlate
+        "carParkID" = $parkId
     }
-    # Write-Verbose $Data $DataValue
-    return $DataValue
+    Set-Content -Path .\ubiparkCreds.json -Value $($Vals | ConvertTo-Json)
 }
 
 function GetUbiParkVals {
@@ -28,6 +33,7 @@ function GetUbiParkVals {
 
     return $creds
 }
+
 function GetUbiParkSession {
     $creds = $Vals
 
@@ -65,15 +71,35 @@ function GetUbiParkSession {
     return $session
 }
 
-function UbiParkBook {
-    [CmdletBinding()]
-    param([Microsoft.PowerShell.Commands.WebRequestSession]$session, [String]$Date)
+function UbiParkList {
+    # [CmdletBinding()]
+    # param([Microsoft.PowerShell.Commands.WebRequestSession]$session)
 
     if($null -eq $session){
         Write-Host "No session!"
         return
     }
-    Write-Host "Getting Booking Form"
+    Write-Host "Getting Car Park List"
+    $Uri = "${BaseUri}/BookNow/GetCarParkList?rateGroupID=70"
+    $WebResp = Invoke-WebRequest `
+                -Uri $Uri `
+                -Method Get `
+                -WebSession $session
+    $list = $WebResp.Content | ConvertFrom-Json
+    foreach ($park in $list) {
+        Write-Host "$($park.ID) => $($park.Name)"
+    }
+}
+
+function UbiParkBook {
+    # [CmdletBinding()]
+    # param([Microsoft.PowerShell.Commands.WebRequestSession]$session, [String]$Date)
+
+    if($null -eq $session){
+        Write-Host "No session!"
+        return
+    }
+    Write-Host "Getting Booking Form for $Date"
     $Uri = "${BaseUri}/BookNow"
     $WebResp = Invoke-WebRequest `
                 -Uri $Uri `
@@ -104,7 +130,7 @@ function UbiParkBook {
     $BayLabel = "" #(GetFormData $WebResp.Content "BayLabel").Replace(" ","+")
     
     if($StationBayReservedID -eq "404"){
-        return "Parking failed for $Date"
+        return "Failed to book a spot for $Date"
     }    
     Write-Host "Confirming the Booking"
     $Uri = "${BaseUri}/BookNow/ProcessPayment"
@@ -121,12 +147,12 @@ function UbiParkBook {
     return "Parking reserved for $Date"
 }
 
-function UbiParkCancel ([Microsoft.PowerShell.Commands.WebRequestSession]$session, [String]$Date){
+function UbiParkCancel {
     if($null -eq $session){
         Write-Host "No session!"
         return
     }
-    Write-Host "Getting bookings"
+    Write-Host "Getting bookings for $Date"
     $Uri = "${BaseUri}/UserPermit/Read?HistoricalItems=False"
     $Body = "sort=&page=1&pageSize=500&group=&filter=EffectiveTo~lte~datetime'${Date}T23-00-00'~and~EffectiveFrom~gte~datetime'${Date}T00-00-00'"
     
@@ -160,27 +186,28 @@ function UbiParkCancel ([Microsoft.PowerShell.Commands.WebRequestSession]$sessio
                     -WebSession $session `
                     -Body $Body 
         Write-Host "Your Booking has been cancelled and a confirmation has been emailed"
+    } else {
+        Write-Host "No bookings found!"
     }
 }
 
-function UbiParkList {
-    [CmdletBinding()]
-    param([Microsoft.PowerShell.Commands.WebRequestSession]$session)
+function GetReqVerToken ([String]$WebResp) {
+    return GetFormData $WebResp "__RequestVerificationToken"
+}
 
-    if($null -eq $session){
-        Write-Host "No session!"
-        return
+function GetFormData  {
+    [CmdletBinding()]
+    param([String]$WebResp, [String]$Data)
+    $DataValue = "404"
+    if($WebResp.Contains($Data)) {
+        $Index1 = $WebResp.IndexOf("$Data")
+        $ReqVerStart = $WebResp.Substring($Index1)
+        $IndexVal = $ReqVerStart.IndexOf("value=")
+        $IndexEnd = $ReqVerStart.IndexOf("/>")
+        $DataValue = $ReqVerStart.Substring($IndexVal + 6, $IndexEnd - $IndexVal - 7).Replace("`"","")
     }
-    Write-Host "Getting Car Park List"
-    $Uri = "${BaseUri}/BookNow/GetCarParkList?rateGroupID=70"
-    $WebResp = Invoke-WebRequest `
-                -Uri $Uri `
-                -Method Get `
-                -WebSession $session
-    $list = $WebResp.Content | ConvertFrom-Json
-    foreach ($park in $list) {
-        Write-Host "$($park.ID) => $($park.Name)"
-    }
+    # Write-Verbose $Data $DataValue
+    return $DataValue
 }
 
 function CheckIntent {
@@ -202,30 +229,6 @@ function CheckIntent {
     return $true
 }
 
-function Init {
-    Write-Host "Lets create your config file (ubiparkCreds.json)"
-    $email = Read-Host -Prompt "Please enter your email"
-
-    $SecurePassword = Read-Host -Prompt "Please enter your password" -AsSecureString
-    $UnsecurePassword = (New-Object PSCredential "user",$SecurePassword).GetNetworkCredential().Password
-
-    $baseuri = Read-Host -Prompt "Please enter the base URI of the site (format: https://your-site.ubipark.com)"
-
-    $numPlate = Read-Host -Prompt "Please enter number plate of the vehicle to book the spot for"
-
-    UbiParkList $session
-    $parkId = Read-Host -Prompt "Which car park would you like to book for?"
-
-    $Vals = @{
-        "email" = $email
-        "pass" = $UnsecurePassword
-        "baseUri" = $baseuri
-        "numberPlate" = $numPlate
-        "carParkID" = $parkId
-    }
-    Set-Content -Path .\ubiparkCreds.json -Value $($Vals | ConvertTo-Json)
-}
-
 function CheckDate {
     $date = $Date
     $isValidDate = $false
@@ -244,14 +247,14 @@ function CheckDate {
     return $isValidDate
 }
 
-
 if($null -eq $args[0]){
     $intent = CheckIntent
     if($intent){
         Init
-    } else {
-        return
-    }
+    } 
+    # else {
+    #     return
+    # }
 }
 
 $Vals = GetUbiParkVals
@@ -265,14 +268,26 @@ $CarParkID = $Vals.carParkID
 $NumberPlate = $Vals.numberPlate
 $session = GetUbiParkSession
 
-# $Date = "2022-06-23"
-do{
-    $Date = Read-Host "Please enter the date (in format yyyy-MM-dd):"
-    $isValidDate = CheckDate
-} while ($isValidDate -eq $false)
+if($args[0] -ne "IDs"){
+    # $Date = "2022-06-23"
+    if($args[0] -eq "Cancel"){
+        $Assumption = $(Get-Date).ToString("yyyy-MM-dd")
+    } else {
+        $Assumption = $(Get-Date).AddDays(21).ToString("yyyy-MM-dd")
+    }
+
+    do{
+        $Date = Read-Host "Please enter the date (in format yyyy-MM-dd) OR press enter if its for $Assumption"
+        if ($Date -eq ""){
+            $Date = $Assumption
+        }
+        $isValidDate = CheckDate
+    } while ($isValidDate -eq $false)
+}
 
 switch ($args[0]) {
-    "Book" { UbiParkBook $session $Date }
-    "Cancel" { UbiParkCancel $session $Date }
-    Default { Write-Host "Please pass in an argument. Possible values are:`r`n1. Book`r`n2. Cancel`r`n" }
+    "IDs" { UbiParkList }
+    "Book" { UbiParkBook }
+    "Cancel" { UbiParkCancel }
+    Default { UbiParkBook }
 }
