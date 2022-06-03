@@ -1,6 +1,6 @@
 # ubipark.ps1
 
-This powershell script can be used to book or cancel a parking spot for a given `$Date`
+This powershell script can be used to book or cancel a parking spot for a given date
 
 ## Initialisation: Create ubiparkCreds.json file
 Run the `. .\ubipark.ps1 Init` script to run Init function that gets the values one by one and creates the file
