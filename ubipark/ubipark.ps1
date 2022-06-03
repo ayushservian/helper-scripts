@@ -2,14 +2,28 @@ function Init {
     Write-Host "Lets create your config file (ubiparkCreds.json)"
     $email = Read-Host -Prompt "Please enter your email"
 
-    $SecurePassword = Read-Host -Prompt "Please enter your password" -AsSecureString
-    $UnsecurePassword = (New-Object PSCredential "user",$SecurePassword).GetNetworkCredential().Password
+    $storePass = Read-Host "Are you ok with storing password in plaintext on the config file (Y/n)?`r`n
+    If you choose not to you'll need to enter password everytime you run the script"
+    if($storePass -eq "Y")
+    {
+        $SecurePassword = Read-Host -Prompt "Please enter your password" -AsSecureString
+        $UnsecurePassword = (New-Object PSCredential "user",$SecurePassword).GetNetworkCredential().Password
+    }
 
-    $baseuri = Read-Host -Prompt "Please enter the base URI of the site (format: https://your-site.ubipark.com)"
+    $baseuri = Read-Host -Prompt "Please enter the <your-site> part of the base URI of your ubipark site (format: https://your-site.ubipark.com)"
+    $baseuri = $baseuri.ToString().ToLower()
 
     $numPlate = Read-Host -Prompt "Please enter number plate of the vehicle to book the spot for"
 
-    UbiParkList $session
+    $Vals = @{
+        "email" = $email
+        "pass" = $UnsecurePassword
+        "baseUri" = "https://$baseuri.ubipark.com"
+        "numberPlate" = $numPlate
+    }
+    Set-Content -Path .\ubiparkCreds.json -Value $($Vals | ConvertTo-Json)
+
+    UbiParkList
     $parkId = Read-Host -Prompt "Which car park would you like to book for?"
 
     $Vals = @{
@@ -35,8 +49,13 @@ function GetUbiParkVals {
 }
 
 function GetUbiParkSession {
+    param([Object]$Initing)
     $creds = $Vals
 
+    if($null -ne $Initing){
+        $creds = $Initing
+    }
+    
     if($null -eq $creds){
         Write-Host "No creds found!!"
         return $null;
@@ -264,8 +283,6 @@ while($null -eq $Vals){
 }
 
 $BaseUri = $Vals.baseUri
-$CarParkID = $Vals.carParkID
-$NumberPlate = $Vals.numberPlate
 $session = GetUbiParkSession
 
 if($args[0] -ne "IDs"){
@@ -273,6 +290,8 @@ if($args[0] -ne "IDs"){
     if($args[0] -eq "Cancel"){
         $Assumption = $(Get-Date).ToString("yyyy-MM-dd")
     } else {
+        $CarParkID = $Vals.carParkID
+        $NumberPlate = $Vals.numberPlate
         $Assumption = $(Get-Date).AddDays(21).ToString("yyyy-MM-dd")
     }
 
