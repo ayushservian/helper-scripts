@@ -2,8 +2,7 @@ function Init {
     Write-Host "Lets create your config file (ubiparkCreds.json)"
     $email = Read-Host -Prompt "Please enter your email"
 
-    $storePass = Read-Host "Are you ok with storing password in plaintext on the config file (Y/n)?`r`n
-    If you choose not to you'll need to enter password everytime you run the script"
+    $storePass = Read-Host "Are you ok with storing password in plaintext on the config file ?`nIf you choose not to you'll need to enter password everytime you run the script (Y/n)"
     if($storePass -eq "Y")
     {
         $SecurePassword = Read-Host -Prompt "Please enter your password" -AsSecureString
@@ -18,21 +17,15 @@ function Init {
     $Vals = @{
         "email" = $email
         "pass" = $UnsecurePassword
-        "baseUri" = "https://$baseuri.ubipark.com"
+        "baseUri" = "https://${baseuri}.ubipark.com"
         "numberPlate" = $numPlate
     }
-    Set-Content -Path .\ubiparkCreds.json -Value $($Vals | ConvertTo-Json)
 
-    UbiParkList
+    $sess = GetUbiParkSession $Vals
+    UbiParkList $sess $Vals.baseUri
     $parkId = Read-Host -Prompt "Which car park would you like to book for?"
 
-    $Vals = @{
-        "email" = $email
-        "pass" = $UnsecurePassword
-        "baseUri" = $baseuri
-        "numberPlate" = $numPlate
-        "carParkID" = $parkId
-    }
+    $Vals.carParkID = $parkId
     Set-Content -Path .\ubiparkCreds.json -Value $($Vals | ConvertTo-Json)
 }
 
@@ -54,8 +47,9 @@ function GetUbiParkSession {
 
     if($null -ne $Initing){
         $creds = $Initing
+        $BaseUri = $creds.baseUri
     }
-    
+
     if($null -eq $creds){
         Write-Host "No creds found!!"
         return $null;
@@ -91,12 +85,16 @@ function GetUbiParkSession {
 }
 
 function UbiParkList {
-    # [CmdletBinding()]
-    # param([Microsoft.PowerShell.Commands.WebRequestSession]$session)
+    [CmdletBinding()]
+    param([Microsoft.PowerShell.Commands.WebRequestSession]$altSession,[String]$baseUri)
 
     if($null -eq $session){
-        Write-Host "No session!"
-        return
+        if($null -eq $altSession){
+            Write-Host "No session!"
+            return
+        }
+        $session = $altSession
+        $BaseUri = $baseUri
     }
     Write-Host "Getting Car Park List"
     $Uri = "${BaseUri}/BookNow/GetCarParkList?rateGroupID=70"
