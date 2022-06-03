@@ -239,7 +239,7 @@ function CheckIntent {
                 ($confirm -ne "n"))
         )
         if($confirm -eq "n"){
-            Write-Host "Please pass in an argument. Possible values are:`r`n1. IDs`r`n2. Book`r`n3. Cancel`r`n" 
+            Write-Host "Taking you through booking.`r`nYou are also able to pass in an argument. Possible values are:`r`n1. IDs`r`n2. Book`r`n3. Cancel`r`n" 
             return $false
         }
     }
