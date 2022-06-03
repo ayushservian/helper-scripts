@@ -22,7 +22,7 @@ function Init {
     }
 
     $sess = GetUbiParkSession $Vals
-    UbiParkList $sess $Vals.baseUri
+    UbiParkList -altSession $sess -altBaseUri $Vals.baseUri
     $parkId = Read-Host -Prompt "Which car park would you like to book for?"
 
     $Vals.carParkID = $parkId
@@ -88,13 +88,15 @@ function UbiParkList {
     [CmdletBinding()]
     param([Microsoft.PowerShell.Commands.WebRequestSession]$altSession,[String]$altBaseUri)
 
-    if($null -eq $session){
-        if($null -eq $altSession){
-            Write-Host "No session!"
-            return
-        }
+    if($null -ne $altSession){
+        Write-Host "initing"
         $session = $altSession
         $BaseUri = $altBaseUri
+    }
+
+    if($null -eq $session){
+        Write-Host "No session!"
+        return
     }
     Write-Host "Getting Car Park List"
     $Uri = "${BaseUri}/BookNow/GetCarParkList?rateGroupID=70"
@@ -281,7 +283,9 @@ while($null -eq $Vals){
 }
 
 $BaseUri = $Vals.baseUri
-$session = GetUbiParkSession
+if($null -eq $session){
+    $session = GetUbiParkSession
+}
 
 if($args[0] -ne "IDs"){
     # $Date = "2022-06-23"
