@@ -4,18 +4,18 @@ Import-Module .\github.psm1 -Force
 # This is quick throw together hack / "SNAG" day script. Needs refactor / optimizing.
 
 ############ EXAMPLE 1 ##############
-Get-GitHubStaleBranch -RepositoryName "budp-common" `
+Get-GitHubStaleBranch -RepositoryName "repo-name" `
 | Sort-Object lastCommitAuthor, lastCommitDate `
 | Select-Object name, lastCommitDate, lastCommitAuthor, LastCommitMessage `
 | Format-Table -AutoSize
 
 ############ EXAMPLE 2 ##############
-Remove-GitHubStaleBranches -BranchNames <file-name>.txt -RepositoryName budp-hybris -Verbose
+Remove-GitHubStaleBranches -BranchNames <file-name>.txt -RepositoryName my-repo -Verbose
 
-Remove-GitHubStaleBranches -BranchNames ../budp-hybris-Delete-Test.txt -RepositoryName budp-hybris -Verbose
+Remove-GitHubStaleBranches -BranchNames ../my-repo-Delete-Test.txt -RepositoryName my-repo -Verbose
 
 produces a log file with name _<file-name>-Deletion.log_
-e.g. _budp-hybris-Delete-Test-Deletion.log_, with contents as below:
+e.g. _my-repo-Delete-Test-Deletion.log_, with contents as below:
 > Deleting test/branch-to-be-deleted-3...
 > Deleted test/branch-to-be-deleted-3
 > Deleting test/branch-to-be-deleted-2...
@@ -23,11 +23,11 @@ e.g. _budp-hybris-Delete-Test-Deletion.log_, with contents as below:
 > 
 
 also produces a _<file-name>-Retry.txt_  for failed branches to be used for the retrial
-e.g. for above it'll have _budp-hybris-Delete-Test-Retry.txt_  with below contents
+e.g. for above it'll have _my-repo-Delete-Test-Retry.txt_  with below contents
 >test/branch-to-be-deleted-2
 >
 
-where _budp-hybris-Delete-Test.txt_ has the below contents:
+where _my-repo-Delete-Test.txt_ has the below contents:
 > test/branch-to-be-deleted-3
 > test/branch-to-be-deleted-2
 > 
@@ -46,15 +46,15 @@ That will be securely cached to disk and will persist across all future PowerShe
 
 
 # SNIPPETS while developing the script
-$r = Get-GitHubRepository -RepositoryName "budp-common"
+$r = Get-GitHubRepository -RepositoryName "my-repo"
 $r.size shows size of repo in kB
 
-$b = Get-GitHubRepositoryBranch -RepositoryName "budp-common"
+$b = Get-GitHubRepositoryBranch -RepositoryName "my-repo"
 
 Get-GitHubRepositoryBranch -OwnerName microsoft -RepositoryName PowerShellForGitHub
 #>
 
-$OwnerName = "Bunnings-Digital"
+$OwnerName = "ayushservian"
 Set-GitHubConfiguration -DefaultOwnerName $OwnerName
 
 
@@ -68,7 +68,7 @@ function Compare-GitHubRepositoryBranch {
     # Compare branches that are ahead/behind - but the PSGithub module doesnt have a method to call it.
     # So invoke our own Github API call 
     # the per_page seems ignored in the GHRestMethod? returned files.count is 300
-    # Invoke-GHRestMethod -UriFragment "/repos/Bunnings-Digital/budp-hybris/compare/master...develop?per_page=1" -Method Get
+    # Invoke-GHRestMethod -UriFragment "/repos/Bunnings-Digital/my-repo/compare/master...develop?per_page=1" -Method Get
 
     $c = Invoke-GHRestMethod -UriFragment "/repos/$($OwnerName)/$($RepositoryName)/compare/$($ToBranch)...$($FromBranch)" -Method Get
     
