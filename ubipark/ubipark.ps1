@@ -266,7 +266,8 @@ function CheckDate {
     return $isValidDate
 }
 
-if($null -eq $args[0]){
+# if($null -eq $args[0]){
+if($args[0] -eq 'Init'){
     $intent = CheckIntent
     if($intent){
         Init
