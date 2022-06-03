@@ -10,9 +10,9 @@ To get the possible car park IDs, leave that value blank on the json file and th
 
 ## Book or Cancel
 
-`. .\ubipark.ps1` OR `. .\ubipark.ps1 Book` => To make a booking
+`. .\ubipark.ps1` OR `. .\ubipark.ps1 Book` => To make a booking on a given date
 
-`. .\ubipark.ps1 Cancel`
+`. .\ubipark.ps1 Cancel` => To cancel a booking for a given date
 
 ## Snippets
 
