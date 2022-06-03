@@ -86,7 +86,7 @@ function GetUbiParkSession {
 
 function UbiParkList {
     [CmdletBinding()]
-    param([Microsoft.PowerShell.Commands.WebRequestSession]$altSession,[String]$baseUri)
+    param([Microsoft.PowerShell.Commands.WebRequestSession]$altSession,[String]$altBaseUri)
 
     if($null -eq $session){
         if($null -eq $altSession){
@@ -94,7 +94,7 @@ function UbiParkList {
             return
         }
         $session = $altSession
-        $BaseUri = $baseUri
+        $BaseUri = $altBaseUri
     }
     Write-Host "Getting Car Park List"
     $Uri = "${BaseUri}/BookNow/GetCarParkList?rateGroupID=70"
