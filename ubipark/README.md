@@ -86,3 +86,6 @@ Please enter the date (in format yyyy-MM-dd) OR press enter if its for 2022-06-0
 Getting bookings for 2022-06-03
 No bookings found!
 ```
+
+## TODO
+Change reserved bay if possible
