@@ -18,6 +18,7 @@ To get the possible car park IDs, leave that value blank on the json file and th
 
 ### Initialising
 ```
+> . .\ubipark.ps1 Init
 Lets create your config file (ubiparkCreds.json)
 Please enter your email: tester@bunnings.com.au
 Are you ok with storing password in plaintext on the config file ?
@@ -43,6 +44,7 @@ Parking reserved for 2022-06-06
 
 ### IDs
 ```
+> . .\ubipark.ps1 IDs
 initing
 Getting Car Park List
 1234 => Office 3
@@ -51,6 +53,7 @@ Getting Car Park List
 
 ### Booking Success
 ```
+> . .\ubipark.ps1
 Getting values from ubiparkCreds.json of format {email: '', pass: '', baseUri: '', carParkID: '', numberPlate: ''}
 Please enter the date (in format yyyy-MM-dd) OR press enter if its for 2022-06-24: 2022-06-06
 Getting Booking Form for 2022-06-06
@@ -62,6 +65,7 @@ Parking reserved for 2022-06-06
 
 ### Booking Failed
 ```
+> . .\ubipark.ps1 Book
 Getting values from ubiparkCreds.json of format {email: '', pass: '', baseUri: '', carParkID: '', numberPlate: ''}
 Please enter the date (in format yyyy-MM-dd) OR press enter if its for 2022-06-24: 2022-06-03
 Getting Booking Form for 2022-06-03
@@ -72,6 +76,7 @@ Failed to book a spot for 2022-06-03
 
 ### Cancel Success
 ```
+> . .\ubipark.ps1 Cancel
 Getting values from ubiparkCreds.json of format {email: '', pass: '', baseUri: '', carParkID: '', numberPlate: ''}
 Please enter the date (in format yyyy-MM-dd) OR press enter if its for 2022-06-03: 2022-06-23
 Getting bookings for 2022-06-23
@@ -81,6 +86,7 @@ Your Booking has been cancelled and a confirmation has been emailed
 ```
 ### Cancel Failed
 ```
+> . .\ubipark.ps1 Cancel
 Getting values from ubiparkCreds.json of format {email: '', pass: '', baseUri: '', carParkID: '', numberPlate: ''}
 Please enter the date (in format yyyy-MM-dd) OR press enter if its for 2022-06-03:
 Getting bookings for 2022-06-03
