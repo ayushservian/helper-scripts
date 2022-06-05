@@ -31,7 +31,10 @@ function Init {
 
 function GetUbiParkVals {
     Write-Host "Getting values from ubiparkCreds.json of format {email: '', pass: '', baseUri: '', carParkID: '', numberPlate: ''}"
-    $creds = Get-Content -Raw -Path .\ubiparkCreds.json | ConvertFrom-Json
+    $doesFileExist = Test-Path -Path .\ubiparkCreds.json -PathType Leaf
+    if($doesFileExist){
+        $creds = Get-Content -Raw -Path .\ubiparkCreds.json | ConvertFrom-Json
+    }
 
     if($null -eq $creds){
         Write-Host "No creds json found!!"
