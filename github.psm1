@@ -10,12 +10,20 @@ Get-GitHubStaleBranch -RepositoryName "repo-name" `
 | Format-Table -AutoSize
 
 ############ EXAMPLE 2 ##############
-Remove-GitHubStaleBranches -BranchNames <file-name>.txt -RepositoryName my-repo -Verbose
+Get-GitHubStaleBranch -RepositoryName "repo-name" `
+                      -OutFile $True `
+                      -staleDays 60 `
+                      -Verbose `
+                      -noAheadCommits $True `
+                      -defaultBranchName develop
 
-Remove-GitHubStaleBranches -BranchNames ../my-repo-Delete-Test.txt -RepositoryName my-repo -Verbose
+############ EXAMPLE 3 ##############
+Remove-GitHubStaleBranches -BranchNames <file-name>.txt -RepositoryName repo-name -Verbose
+
+Remove-GitHubStaleBranches -BranchNames ../repo-name-Delete-Test.txt -RepositoryName repo-name -Verbose
 
 produces a log file with name _<file-name>-Deletion.log_
-e.g. _my-repo-Delete-Test-Deletion.log_, with contents as below:
+e.g. _repo-name-Delete-Test-Deletion.log_, with contents as below:
 > Deleting test/branch-to-be-deleted-3...
 > Deleted test/branch-to-be-deleted-3
 > Deleting test/branch-to-be-deleted-2...
@@ -23,11 +31,11 @@ e.g. _my-repo-Delete-Test-Deletion.log_, with contents as below:
 > 
 
 also produces a _<file-name>-Retry.txt_  for failed branches to be used for the retrial
-e.g. for above it'll have _my-repo-Delete-Test-Retry.txt_  with below contents
+e.g. for above it'll have _repo-name-Delete-Test-Retry.txt_  with below contents
 >test/branch-to-be-deleted-2
 >
 
-where _my-repo-Delete-Test.txt_ has the below contents:
+where _repo-name-Delete-Test.txt_ has the below contents:
 > test/branch-to-be-deleted-3
 > test/branch-to-be-deleted-2
 > 
@@ -68,7 +76,7 @@ function Compare-GitHubRepositoryBranch {
     # Compare branches that are ahead/behind - but the PSGithub module doesnt have a method to call it.
     # So invoke our own Github API call 
     # the per_page seems ignored in the GHRestMethod? returned files.count is 300
-    # Invoke-GHRestMethod -UriFragment "/repos/Bunnings-Digital/my-repo/compare/master...develop?per_page=1" -Method Get
+    # Invoke-GHRestMethod -UriFragment "/repos/ayushservian/repo-name/compare/master...develop?per_page=1" -Method Get
 
     $c = Invoke-GHRestMethod -UriFragment "/repos/$($OwnerName)/$($RepositoryName)/compare/$($ToBranch)...$($FromBranch)" -Method Get
     
@@ -85,8 +93,10 @@ function Get-GitHubStaleBranch {
     [CmdletBinding()]
     param (
         $RepositoryName,
-        $OutFile = $False,
-        $staleDays = 30
+        [Boolean]$OutFile = $False,
+        $staleDays = 30,
+        [Boolean]$noAheadCommits = $False,
+        $defaultBranchName = "main"
     )
     
     # TODO - Continuously cache to disk to mimimize Github API calls / API limits
@@ -106,24 +116,29 @@ function Get-GitHubStaleBranch {
 
     ForEach ($repobranch in $repoBranches) {
         $branch = $repoBranch | Get-GitHubRepositoryBranch
+        
+        if($defaultBranchName -eq $($branch.name)) { continue }
 
         If ($branch.commit.commit.committer.date -lt $staleDate) {
             Write-Verbose "Found stale branch $($branch.name)" # last commit $($branch.commit.commit.committer.date)"
-
-            $staleBranch = [PSCustomObject]@{
-                Name = $branch.name
-                LastCommit = $branch.commit.sha
-                LastCommitDate = $branch.commit.commit.committer.date
-                LastCommitAuthor = $branch.commit.commit.author.name
-                LastCommitAuthorEmail = $branch.commit.commit.author.email
-                LastCommitAuthorLogin = $branch.commit.author.login
-                LastCommitMessage = $branch.commit.commit.message.Trim()
+            $comp = Compare-GitHubRepositoryBranch -RepositoryName $RepositoryName -ToBranch $defaultBranchName -FromBranch $($branch.name)
+            Write-Verbose $comp.aheadyBy
+            if(($noAheadCommits -eq $False) -or ($comp.aheadyBy -eq 0)){
+                $staleBranch = [PSCustomObject]@{
+                    Name = $branch.name
+                    LastCommit = $branch.commit.sha
+                    LastCommitDate = $branch.commit.commit.committer.date
+                    LastCommitAuthor = $branch.commit.commit.author.name
+                    LastCommitAuthorEmail = $branch.commit.commit.author.email
+                    LastCommitAuthorLogin = $branch.commit.author.login
+                    LastCommitMessage = $branch.commit.commit.message.Trim()
+                }
+                if ($OutFile)
+                {
+                    Add-Content -Value $staleBranch -Path "$File.log"
+                }
+                $staleBranchCollection += $staleBranch
             }
-            if ($OutFile)
-            {
-                Add-Content -Value $staleBranch -Path "$File.log"
-            }
-            $staleBranchCollection += $staleBranch
         }   
 
     }
@@ -133,9 +148,10 @@ function Get-GitHubStaleBranch {
         $staleBranchCollection `
         | Sort-Object lastCommitAuthor, lastCommitDate `
         | Select-Object name, lastCommitDate, lastCommitAuthor, LastCommitMessage `
-        | Format-Table -AutoSize `
-        | Out-String `
-        | Add-Content -Path "$File.txt"
+        | Export-Csv  -Path "$File.csv" -NoTypeInformation
+        # | Format-Table -AutoSize `
+        # | Out-String `
+        # | Add-Content -Path "$File.txt" `
 
         $staleBranchCollection `
         | Select-Object name `
