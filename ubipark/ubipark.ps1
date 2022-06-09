@@ -287,9 +287,8 @@ while($null -eq $Vals){
 }
 
 $BaseUri = $Vals.baseUri
-if($null -eq $session){
-    $session = GetUbiParkSession
-}
+
+$session = GetUbiParkSession
 
 if($args[0] -ne "IDs"){
     # $Date = "2022-06-23"
