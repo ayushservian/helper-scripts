@@ -130,11 +130,13 @@ function UbiParkBook {
                 -WebSession $session
     $ReqVerification = GetReqVerToken($WebResp.Content)
 
+    $Group = GetFormData $WebResp.Content "Group"
+
     Write-Host "Making a Booking Request"
     $Uri = "${BaseUri}/BookNow/Payment"
     $From = "${Date}T07%3A00%3A00.000"
     $To = "${Date}T19%3A15%3A00.000"
-    $Body = "Group=teammember&SelectedCarParkName=&RateGroupID=70&Hourly=True&ToDateDisplay=True&LicensePlateDisplay=True&FromDate=${From}&ToDate=${To}&PaymentGatewayID=1&PromoCodeID=&PromoCodeOneTimeUseID=&PromoCode=&DiscountPermitID=&CaptureNumberPlateRequired=True&NumberPlateRequiredRequired=True&MaxPurchaseDays=21&CustomTextDisplay=False&CustomTextRequired=False&CustomTextLabel=&CarParkID=${CarParkID}&FromDatePicker=27%2F05%2F2022&FromTimePicker=09%3A00&ToDatePicker=27%2F05%2F2022&ToTimePicker=09%3A15&LicensePlate_input=${NumberPlate}&LicensePlate=${NumberPlate}&CountryID=1&StateID=1&__RequestVerificationToken=${ReqVerification}&X-Requested-With=XMLHttpRequest"
+    $Body = "Group=${Group}&SelectedCarParkName=&RateGroupID=70&Hourly=True&ToDateDisplay=True&LicensePlateDisplay=True&FromDate=${From}&ToDate=${To}&PaymentGatewayID=1&PromoCodeID=&PromoCodeOneTimeUseID=&PromoCode=&DiscountPermitID=&CaptureNumberPlateRequired=True&NumberPlateRequiredRequired=True&MaxPurchaseDays=21&CustomTextDisplay=False&CustomTextRequired=False&CustomTextLabel=&CarParkID=${CarParkID}&FromDatePicker=27%2F05%2F2022&FromTimePicker=09%3A00&ToDatePicker=27%2F05%2F2022&ToTimePicker=09%3A15&LicensePlate_input=${NumberPlate}&LicensePlate=${NumberPlate}&CountryID=1&StateID=1&__RequestVerificationToken=${ReqVerification}&X-Requested-With=XMLHttpRequest"
 
 
     $PaymentResp = Invoke-WebRequest `
@@ -149,6 +151,10 @@ function UbiParkBook {
     $StationBayReservedID = GetFormData $PaymentResp.Content "StationBayReservedID"
     $StationBayID = GetFormData $PaymentResp.Content "StationBayID"
     $CardToken = GetFormData $PaymentResp.Content "CardToken"
+    $UserID = GetFormData $PaymentResp.Content "UserID"
+    $PermitID = GetFormData $PaymentResp.Content "PermitID"
+    $PermitName = $(GetFormData $PaymentResp.Content "PermitName").Replace(" ","+")
+    $CarParkName = $(GetFormData $PaymentResp.Content "CarParkName").Replace(" ","+")
     $BayLabel = "" #(GetFormData $WebResp.Content "BayLabel").Replace(" ","+")
     
     if($StationBayReservedID -eq "404"){
@@ -156,9 +162,9 @@ function UbiParkBook {
     }    
     Write-Host "Confirming the Booking"
     $Uri = "${BaseUri}/BookNow/ProcessPayment"
-    $Body = "Group=teammember&UserPermitID=0&UserID=134525&PermitID=196&PermitName=Botanicca+Car+Park&CarParkID=${CarParkID}&CarParkName=National+Support+Office+-+Botanicca+3&EffectiveFrom=${From}&EffectiveTo=${To}&Hourly=True&LicensePlate=${NumberPlate}&CountryID=1&StateID=1&StateCode=&PaymentAmount=0&PaymentGatewayID=1&CardToken=${CardToken}&HasCard=False&ReservedBays=True&ChangeBay=True&StationBayReservedID=${StationBayReservedID}&StationBayID=${StationBayID}&BayLabel=${BayLabel}&BayNotes=&TandemBayID=&PromoCodeID=&PromoCodeOneTimeUseID=&PromoCode=&DiscountPermitID=&Cost=0&Discount=0&CustomText=&__RequestVerificationToken=${ReqVerification}"
+    $Body = "Group=${Group}&UserPermitID=0&UserID=${UserID}&PermitID=${PermitID}&PermitName=${PermitName}&CarParkID=${CarParkID}&CarParkName=${CarParkName}&EffectiveFrom=${From}&EffectiveTo=${To}&Hourly=True&LicensePlate=${NumberPlate}&CountryID=1&StateID=1&StateCode=&PaymentAmount=0&PaymentGatewayID=1&CardToken=${CardToken}&HasCard=False&ReservedBays=True&ChangeBay=True&StationBayReservedID=${StationBayReservedID}&StationBayID=${StationBayID}&BayLabel=${BayLabel}&BayNotes=&TandemBayID=&PromoCodeID=&PromoCodeOneTimeUseID=&PromoCode=&DiscountPermitID=&Cost=0&Discount=0&CustomText=&__RequestVerificationToken=${ReqVerification}"
 
-    # Write-Verbose $Body.Replace("&","`r`n")
+    # Write-Host $Body.Replace("&","`r`n")
     $WebResp = Invoke-WebRequest `
                 -Uri $Uri `
                 -Method POST `
@@ -221,14 +227,14 @@ function GetFormData  {
     [CmdletBinding()]
     param([String]$WebResp, [String]$Data)
     $DataValue = "404"
-    if($WebResp.Contains($Data)) {
-        $Index1 = $WebResp.IndexOf("$Data")
+    if($WebResp.Contains("name=`"$Data`"")) {
+        $Index1 = $WebResp.IndexOf("name=`"$Data`"")
         $ReqVerStart = $WebResp.Substring($Index1)
         $IndexVal = $ReqVerStart.IndexOf("value=")
         $IndexEnd = $ReqVerStart.IndexOf("/>")
         $DataValue = $ReqVerStart.Substring($IndexVal + 6, $IndexEnd - $IndexVal - 7).Replace("`"","")
     }
-    # Write-Verbose $Data $DataValue
+    # Write-Host $Data $DataValue
     return $DataValue
 }
 
