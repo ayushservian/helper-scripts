@@ -87,6 +87,32 @@ function GetUbiParkSession {
     return $session
 }
 
+function GetUbiBookings {
+    if($null -eq $session){
+        Write-Host "No session!"
+        return
+    }
+    Write-Host "Getting Car Park Bookings"
+    $Uri = "${BaseUri}/UserPermit/Read?HistoricalItems=False"
+    $Body = "sort=&page=1&pageSize=500&group=&filter="
+    $WebResp = Invoke-WebRequest `
+                -Uri $Uri `
+                -Method Post `
+                -ContentType "application/x-www-form-urlencoded; charset=UTF-8" `
+                -WebSession $session `
+                -Body $Body
+    $list = $WebResp.Content | ConvertFrom-Json
+    $index = 0
+
+    foreach ($park in $list.Data) {
+        $booking = $park.EffectiveFrom.ToString().Split("T")[0]
+        $response += @($booking)
+        $index++
+        Write-Host "$index. $booking ==> $($park.EffectiveFrom) => $($park.EffectiveTo)"
+    }
+    return $response
+}
+
 function UbiParkList {
     [CmdletBinding()]
     param([Microsoft.PowerShell.Commands.WebRequestSession]$altSession,[String]$altBaseUri)
@@ -295,24 +321,29 @@ while($null -eq $Vals){
 $BaseUri = $Vals.baseUri
 
 $session = GetUbiParkSession
-
+$bookedDates = GetUbiBookings
 if($args[0] -ne "IDs"){
     # $Date = "2022-06-23"
     if($args[0] -eq "Cancel"){
-        $Assumption = $(Get-Date).ToString("yyyy-MM-dd")
+        $DateIndex = Read-Host "Enter the index of the booking to be cancelled"
+        $Date = $bookedDates[$DateIndex - 1]
+        if($DateIndex -gt $bookedDates.Count) {
+            Write-Host "Aborting cancellation"
+            return
+        }
     } else {
         $CarParkID = $Vals.carParkID
         $NumberPlate = $Vals.numberPlate
         $Assumption = $(Get-Date).AddDays(21).ToString("yyyy-MM-dd")
-    }
 
-    do{
-        $Date = Read-Host "Please enter the date (in format yyyy-MM-dd) OR press enter if its for $Assumption"
-        if ($Date -eq ""){
-            $Date = $Assumption
-        }
-        $isValidDate = CheckDate
-    } while ($isValidDate -eq $false)
+        do{
+            $Date = Read-Host "Please enter the date (in format yyyy-MM-dd) OR press enter if its for $Assumption"
+            if ($Date -eq ""){
+                $Date = $Assumption
+            }
+            $isValidDate = CheckDate
+        } while ($isValidDate -eq $false)
+    }
 }
 
 switch ($args[0]) {
