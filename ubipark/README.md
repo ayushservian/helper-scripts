@@ -34,6 +34,9 @@ Getting Car Park List
 4567 => Office 9
 Which car park would you like to book for?: 1234
 Getting values from ubiparkCreds.json of format {email: '', pass: '', baseUri: '', carParkID: '', numberPlate: ''}
+Getting Car Park Bookings
+1. 2022-06-24 ==> 2022-06-24T07:00:00 => 2022-06-24T19:15:00
+2. 2022-06-30 ==> 2022-06-30T06:30:00 => 2022-06-30T18:30:00
 Please enter the date (in format yyyy-MM-dd) OR press enter if its for 2022-06-24: 2022-06-06
 Getting Booking Form for 2022-06-06
 Making a Booking Request
@@ -55,6 +58,9 @@ Getting Car Park List
 ```
 > . .\ubipark.ps1
 Getting values from ubiparkCreds.json of format {email: '', pass: '', baseUri: '', carParkID: '', numberPlate: ''}
+Getting Car Park Bookings
+1. 2022-06-24 ==> 2022-06-24T07:00:00 => 2022-06-24T19:15:00
+2. 2022-06-30 ==> 2022-06-30T06:30:00 => 2022-06-30T18:30:00
 Please enter the date (in format yyyy-MM-dd) OR press enter if its for 2022-06-24: 2022-06-06
 Getting Booking Form for 2022-06-06
 Making a Booking Request
@@ -67,6 +73,9 @@ Parking reserved for 2022-06-06
 ```
 > . .\ubipark.ps1 Book
 Getting values from ubiparkCreds.json of format {email: '', pass: '', baseUri: '', carParkID: '', numberPlate: ''}
+Getting Car Park Bookings
+1. 2022-06-24 ==> 2022-06-24T07:00:00 => 2022-06-24T19:15:00
+2. 2022-06-30 ==> 2022-06-30T06:30:00 => 2022-06-30T18:30:00
 Please enter the date (in format yyyy-MM-dd) OR press enter if its for 2022-06-24: 2022-06-03
 Getting Booking Form for 2022-06-03
 Making a Booking Request
@@ -78,20 +87,27 @@ Failed to book a spot for 2022-06-03
 ```
 > . .\ubipark.ps1 Cancel
 Getting values from ubiparkCreds.json of format {email: '', pass: '', baseUri: '', carParkID: '', numberPlate: ''}
-Please enter the date (in format yyyy-MM-dd) OR press enter if its for 2022-06-03: 2022-06-23
-Getting bookings for 2022-06-23
+Getting Car Park Bookings
+1. 2022-06-24 ==> 2022-06-24T07:00:00 => 2022-06-24T19:15:00
+2. 2022-06-30 ==> 2022-06-30T06:30:00 => 2022-06-30T18:30:00
+Enter the index of the booking to be cancelled: 1
+Getting bookings for 2022-06-24
 Requesting cancellation form <cancellation uri>
 Cancelling Booking
 Your Booking has been cancelled and a confirmation has been emailed
 ```
-### Cancel Failed
-```
-> . .\ubipark.ps1 Cancel
-Getting values from ubiparkCreds.json of format {email: '', pass: '', baseUri: '', carParkID: '', numberPlate: ''}
-Please enter the date (in format yyyy-MM-dd) OR press enter if its for 2022-06-03:
-Getting bookings for 2022-06-03
-No bookings found!
-```
 
+### Cancel Aborted
+```
+>. .\ubipark.ps1 Cancel
+Getting values from ubiparkCreds.json of format {email: '', pass: '', baseUri: '', carParkID: '', numberPlate: ''}
+Getting Login Form
+Getting session
+Getting Car Park Bookings
+1. 2022-06-24 ==> 2022-06-24T07:00:00 => 2022-06-24T19:15:00
+2. 2022-06-30 ==> 2022-06-30T06:30:00 => 2022-06-30T18:30:00
+Enter the index of the booking to be cancelled: 3
+Aborting cancellation
+```
 ## TODO
 Change reserved bay if possible
